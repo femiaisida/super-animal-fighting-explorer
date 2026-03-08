@@ -75,6 +75,30 @@ jobs:
           name: Web
           path: SuperAnimalFightingExplorer_Web.zip
 
+  deploy-pages:
+    needs: build-web
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Web
+          path: web-artifact
+
+      - name: Unzip web build
+        run: |
+          mkdir -p gh-pages
+          unzip web-artifact/SuperAnimalFightingExplorer_Web.zip -d gh-pages
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gh-pages
+          force_orphan: true
+
   release:
     needs: [build-windows, build-mac, build-linux, build-web]
     runs-on: ubuntu-latest
