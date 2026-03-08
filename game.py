@@ -4,16 +4,19 @@ from core.asset_manager import AssetManager
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, web_mode=False):
         pygame.init()
-
-        info = pygame.display.Info()
-        self.width  = info.current_w
-        self.height = info.current_h
-        self.screen = pygame.display.set_mode(
-            (self.width, self.height),
-            pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF
-        )
+        if web_mode:
+            self.width, self.height = 960, 540
+            self.screen = pygame.display.set_mode((self.width, self.height))
+        else:
+            info = pygame.display.Info()
+            self.width  = info.current_w
+            self.height = info.current_h
+            self.screen = pygame.display.set_mode(
+                (self.width, self.height),
+                pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF
+            )
         pygame.display.set_caption("Super Animal Fighting Explorer")
 
         self.clock   = pygame.time.Clock()
