@@ -185,9 +185,10 @@ class AssetManager:
             pass
 
         # ── Fonts ──────────────────────────────────────────────────────────────
-        self.load_font("small",  "PressStart2P.ttf", 10)
-        self.load_font("medium", "PressStart2P.ttf", 14)
-        self.load_font("large",  "PressStart2P.ttf", 20)
+        _fs = max(8, int(self.screen_h / 54))
+        self.load_font("small",  "PressStart2P.ttf", _fs)
+        self.load_font("medium", "PressStart2P.ttf", int(_fs * 1.4))
+        self.load_font("large",  "PressStart2P.ttf", int(_fs * 2.0))
 
         sw, sh = self.screen_w, self.screen_h
 
