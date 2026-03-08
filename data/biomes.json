@@ -1,0 +1,6 @@
+{
+    "forest": {"enemies": ["Goblin", "Wolf"], "boss": "Forest Guardian"},
+    "lava": {"enemies": ["Fire Imp", "Lava Golem"], "boss": "Lava King"},
+    "ocean": {"enemies": ["Merfolk", "Shark"], "boss": "Kraken"},
+    "ruins": {"enemies": ["Skeleton", "Ancient Golem"], "boss": "Ruins Overlord"}
+}
