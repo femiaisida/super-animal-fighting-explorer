@@ -27,7 +27,7 @@ class StoryIntroScene(Scene):
         self.timer      = 0
         self.fade_in    = 0.0
         self.anim_time  = 0.0
-        self.assets.play_music("story")
+        self._music_started = False
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -66,6 +66,9 @@ class StoryIntroScene(Scene):
             self.on_complete()
 
     def update(self, dt):
+        if not self._music_started:
+            self._music_started = True
+            self.assets.play_music("story")
         self.timer     += 1
         self.anim_time += dt
         self.fade_in    = min(1.0, self.fade_in + dt * 2.0)

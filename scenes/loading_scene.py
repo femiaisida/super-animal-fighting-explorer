@@ -22,7 +22,7 @@ class LoadingScene(Scene):
         self.fade_in   = 0.0
         self.fade_out  = 0.0
         self.leaving   = False
-        self.assets.play_music("menu")
+        self._music_started = False
 
     def handle_event(self, event):
         if self.timer < 40:
@@ -37,10 +37,13 @@ class LoadingScene(Scene):
 
     def _go(self):
         from scenes.character_select_scene import CharacterSelectScene
-        self.assets.play_music("menu")
+        self._music_started = False
         self.manager.switch(CharacterSelectScene(self.manager, self.assets))
 
     def update(self, dt):
+        if not self._music_started:
+            self._music_started = True
+            self.assets.play_music("menu")
         self.timer  += 1
         self.fade_in = min(1.0, self.fade_in + dt * 1.2)
 
