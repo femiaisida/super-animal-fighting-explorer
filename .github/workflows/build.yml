@@ -1,0 +1,96 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pygame pyinstaller
+      - run: pyinstaller SuperAnimalFightingExplorer.spec
+      - run: Compress-Archive -Path dist\SuperAnimalFightingExplorer -DestinationPath dist\SuperAnimalFightingExplorer_Windows.zip
+        shell: powershell
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Windows
+          path: dist/SuperAnimalFightingExplorer_Windows.zip
+
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pygame pyinstaller
+      - run: pyinstaller SuperAnimalFightingExplorer.spec
+      - run: cd dist && zip -r SuperAnimalFightingExplorer_Mac.zip SuperAnimalFightingExplorer.app || zip -r SuperAnimalFightingExplorer_Mac.zip SuperAnimalFightingExplorer/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mac
+          path: dist/SuperAnimalFightingExplorer_Mac.zip
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libfreetype6-dev
+      - run: pip install pygame pyinstaller
+      - run: pyinstaller SuperAnimalFightingExplorer.spec
+      - run: cd dist && zip -r SuperAnimalFightingExplorer_Linux.zip SuperAnimalFightingExplorer/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Linux
+          path: dist/SuperAnimalFightingExplorer_Linux.zip
+
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libsdl2-dev libsdl2-mixer-dev libsdl2-ttf-dev
+      - run: pip install pygame pygbag
+      - run: python -m pygbag --build main_web.py
+      - run: cd build/web && zip -r ../../SuperAnimalFightingExplorer_Web.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Web
+          path: SuperAnimalFightingExplorer_Web.zip
+
+  release:
+    needs: [build-windows, build-mac, build-linux, build-web]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: "${{ github.ref_name }}"
+          prerelease: true
+          files: |
+            artifacts/Windows/SuperAnimalFightingExplorer_Windows.zip
+            artifacts/Mac/SuperAnimalFightingExplorer_Mac.zip
+            artifacts/Linux/SuperAnimalFightingExplorer_Linux.zip
+            artifacts/Web/SuperAnimalFightingExplorer_Web.zip

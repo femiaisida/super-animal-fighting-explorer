@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+save.json
+assets/old assets/
+build/
+dist/
