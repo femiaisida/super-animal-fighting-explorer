@@ -67,10 +67,12 @@ jobs:
       - run: |
           sudo apt-get update -qq
           sudo apt-get install -y libsdl2-dev libsdl2-mixer-dev libsdl2-ttf-dev
-      - run: pip install pygame pygbag
-      - run: python -m pygbag --build --ume_block 0 main_web.py
-      - run: sed -i "s/autorun : 0/autorun : 1/g" build/web/index.html
-      - run: cd build/web && zip -r ../../SuperAnimalFightingExplorer_Web.zip .
+      - name: Install and build
+        run: |
+          pip install pygame pygbag
+          python -m pygbag --build --ume_block 0 main_web.py
+          sed -i "s/autorun : 0/autorun : 1/g" build/web/index.html
+          cd build/web && zip -r ../../SuperAnimalFightingExplorer_Web.zip .
       - uses: actions/upload-artifact@v4
         with:
           name: Web
