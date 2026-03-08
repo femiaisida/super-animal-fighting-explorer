@@ -179,7 +179,10 @@ class AssetManager:
             pass
 
     def load_all(self):
-        pygame.mixer.init()
+        try:
+            pygame.mixer.init()
+        except Exception:
+            pass
 
         # ── Fonts ──────────────────────────────────────────────────────────────
         self.load_font("small",  "PressStart2P.ttf", 10)
