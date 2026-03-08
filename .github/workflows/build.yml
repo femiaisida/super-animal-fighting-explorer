@@ -68,7 +68,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y libsdl2-dev libsdl2-mixer-dev libsdl2-ttf-dev
       - run: pip install pygame pygbag
-      - run: python -m pygbag --build --ume_block 0 main_web.py
+      - run: python -m pygbag --build --ume_block 0 --autorun 1 main_web.py
       - run: cd build/web && zip -r ../../SuperAnimalFightingExplorer_Web.zip .
       - uses: actions/upload-artifact@v4
         with:
