@@ -518,9 +518,10 @@ class BattleScene(Scene):
                 items.append((f"Shield x{shields}",  ( 80, 140, 255)))
             if powers > 0:
                 items.append((f"Power  x{powers}",   (255, 160,  40)))
+            lh = int(sh / 54)
             for j, (txt, col) in enumerate(items):
                 s = font_small.render(txt, True, col)
-                screen.blit(s, (sw - s.get_width() - 16, hud_y + j * 18))
+                screen.blit(s, (sw - s.get_width() - 16, hud_y + j * int(lh * 1.6)))
 
     def _sprite_size(self, creature):
         if is_boss(creature):
@@ -564,14 +565,20 @@ class BattleScene(Scene):
 
         if font_small:
             col    = (255,200,50) if is_boss(creature) else (255,255,255)
+            # Scale name to fit sprite width
             shadow = font_small.render(creature.name, True, (0,0,0))
             label  = font_small.render(creature.name, True, col)
-            lx     = dx + sw_s//2 - label.get_width()//2
-            screen.blit(shadow, (lx+1, dy-67))
-            screen.blit(label,  (lx,   dy-68))
+            max_nw = sw_s + 20
+            if label.get_width() > max_nw:
+                sc     = max_nw / label.get_width()
+                label  = pygame.transform.scale(label,  (int(label.get_width()*sc),  int(label.get_height()*sc)))
+                shadow = pygame.transform.scale(shadow, (label.get_width(), label.get_height()))
+            lx = dx + sw_s//2 - label.get_width()//2
+            screen.blit(shadow, (lx+1, dy-96))
+            screen.blit(label,  (lx,   dy-97))
 
-        # HP bar with clear gap below name
-        self._draw_hp_bar(screen, creature, dx-10, dy-44, sw_s+20)
+        # HP bar — clear gap below name
+        self._draw_hp_bar(screen, creature, dx-10, dy-60, sw_s+20)
 
     def _draw_hp_bar(self, screen, creature, x, y, width=140):
         font_small = self.assets.get_font("small")
@@ -585,8 +592,8 @@ class BattleScene(Scene):
             hp_str = f"{max(0,creature.health)}/{creature.max_health}"
             sh_t   = font_small.render(hp_str, True, (0,0,0))
             lb     = font_small.render(hp_str, True, (255,255,255))
-            screen.blit(sh_t, (x+1, y-13))
-            screen.blit(lb,   (x,   y-13))
+            screen.blit(sh_t, (x+1, y-16))
+            screen.blit(lb,   (x,   y-16))
 
     def _ability_slot_rect(self, idx):
         sw, sh  = self.sw, self.sh
@@ -659,15 +666,18 @@ class BattleScene(Scene):
                 screen.blit(font_small.render(f"[{idx+1}]", True, (140,140,160)), (rect.x+5, rect.y+4))
                 text_col = (255,210,80) if (special and ready and my_turn) else \
                            (255,255,255) if (ready and my_turn) else (75,75,75)
-                screen.blit(font_small.render(ability.name[:12], True, text_col),
-                            (rect.x+5, rect.y+rect.height//2-5))
+                ab_name = self.assets.render_fitted("small", ability.name, text_col, rect.w - 10)
+                if ab_name:
+                    screen.blit(ab_name, (rect.x + 5, rect.y + rect.height//2 - ab_name.get_height()//2))
+                lh_b = int(self.sh / 54)
                 if not ready:
-                    screen.blit(font_small.render(f"Cooldown {ability.current_cooldown}", True, (200,70,70)),
-                                (rect.x+5, rect.bottom-17))
+                    cd_s = self.assets.render_fitted("small", f"CD:{ability.current_cooldown}", (200,70,70), rect.w - 10)
+                    if cd_s: screen.blit(cd_s, (rect.x+5, rect.bottom - int(lh_b * 1.4)))
                 elif my_turn:
                     tag = "SPECIAL" if special else "READY"
                     tc  = (255,180,0) if special else (80,220,80)
-                    screen.blit(font_small.render(tag, True, tc), (rect.x+5, rect.bottom-17))
+                    tg_s = self.assets.render_fitted("small", tag, tc, rect.w - 10)
+                    if tg_s: screen.blit(tg_s, (rect.x+5, rect.bottom - int(lh_b * 1.4)))
                 if elem:
                     el = font_small.render(elem.upper(), True, (*ecol[:3],))
                     screen.blit(el, (rect.right - el.get_width() - 4, rect.y+4))
@@ -688,7 +698,7 @@ class BattleScene(Scene):
             screen.blit(font_small.render("Potion", True, (180,240,180) if has else (80,80,80)),
                         (rect.x+5, rect.y+rect.h//2-5))
             screen.blit(font_small.render(f"x{pots}", True, (120,220,120) if has else (60,60,60)),
-                        (rect.x+5, rect.bottom-17))
+                        (rect.x+5, rect.bottom - int(self.sh / 38)))
 
     def _draw_elixir_button(self, screen):
         font_small = self.assets.get_font("small")
@@ -706,7 +716,7 @@ class BattleScene(Scene):
             screen.blit(font_small.render("Elixir", True, (210,160,255) if has else (80,80,80)),
                         (rect.x+5, rect.y+rect.h//2-5))
             screen.blit(font_small.render(f"x{elixirs}", True, (190,130,255) if has else (60,60,60)),
-                        (rect.x+5, rect.bottom-17))
+                        (rect.x+5, rect.bottom - int(self.sh / 38)))
 
     def _draw_shield_button(self, screen):
         font_small = self.assets.get_font("small")
@@ -723,7 +733,7 @@ class BattleScene(Scene):
             screen.blit(font_small.render("Shield",  True, (140,200,255) if has else (80,80,80)),
                         (rect.x+5, rect.y+rect.h//2-5))
             screen.blit(font_small.render(f"x{charges}", True, (120,180,255) if has else (60,60,60)),
-                        (rect.x+5, rect.bottom-17))
+                        (rect.x+5, rect.bottom - int(self.sh / 38)))
 
     def _draw_power_button(self, screen):
         font_small = self.assets.get_font("small")
@@ -740,7 +750,7 @@ class BattleScene(Scene):
             screen.blit(font_small.render("Power",  True, (255,180,80) if has else (80,80,80)),
                         (rect.x+5, rect.y+rect.h//2-5))
             screen.blit(font_small.render(f"x{shards}", True, (255,160,60) if has else (60,60,60)),
-                        (rect.x+5, rect.bottom-17))
+                        (rect.x+5, rect.bottom - int(self.sh / 38)))
 
     def _draw_turn_indicator(self, screen):
         font_small = self.assets.get_font("small")
@@ -758,11 +768,13 @@ class BattleScene(Scene):
     def _draw_message(self, screen):
         font_small = self.assets.get_font("small")
         if not font_small or not self.message: return
-        surf   = font_small.render(self.message, True, (255,230,80))
-        shadow = font_small.render(self.message, True, (0,0,0))
+        surf = self.assets.render_fitted("small", self.message, (255,230,80), self.sw - 20)
+        if not surf: return
+        shadow = self.assets.render_fitted("small", self.message, (0,0,0), self.sw - 20)
         x = self.sw//2 - surf.get_width()//2
         y = int(self.sh*0.75)
-        screen.blit(shadow, (x+1,y+1)); screen.blit(surf, (x,y))
+        if shadow: screen.blit(shadow, (x+1,y+1))
+        screen.blit(surf, (x,y))
 
     def _draw_matchup(self, screen):
         font_medium = self.assets.get_font("medium")
@@ -823,6 +835,9 @@ class BattleScene(Scene):
         pulse = abs(_m.sin(self.boss_phase_timer * 0.08 + self.timer * 0.05)) * 0.4 + 0.6
         if font_medium:
             ps = font_medium.render(f"⚡ {boss.name}: {phase_text} ⚡", True, phase_col)
+            if ps.get_width() > sw - 20:
+                sc = (sw - 20) / ps.get_width()
+                ps = pygame.transform.scale(ps, (int(ps.get_width()*sc), int(ps.get_height()*sc)))
             ps.set_alpha(int(220 * pulse))
             screen.blit(ps, (sw // 2 - ps.get_width() // 2, int(sh * 0.06)))
 
@@ -869,8 +884,11 @@ class BattleScene(Scene):
             if font_medium:
                 fade  = min(1.0, self.taunt_timer / 30)
                 surf  = font_medium.render(taunt, True, (220,200,160))
+                if surf.get_width() > sw - 40:
+                    sc   = (sw - 40) / surf.get_width()
+                    surf = pygame.transform.scale(surf, (int(surf.get_width()*sc), int(surf.get_height()*sc)))
                 surf.set_alpha(int(255*fade))
-                screen.blit(surf, (cx - surf.get_width()//2, int(sh*0.58)))
+                screen.blit(surf, (cx - surf.get_width()//2, int(sh*0.60)))
 
         if self.taunt_timer > 30 and font_small:
             h = font_small.render("Press any key to fight", True, (100,100,120))

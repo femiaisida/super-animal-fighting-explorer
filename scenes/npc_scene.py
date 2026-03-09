@@ -30,9 +30,8 @@ class NPCScene(Scene):
         self.save_data      = save_data
         self.on_close       = on_close
 
-        info    = pygame.display.Info()
-        self.sw = info.current_w
-        self.sh = info.current_h
+        self.sw = assets.screen_w
+        self.sh = assets.screen_h
 
         self.line_index  = 0
         self.timer       = 0

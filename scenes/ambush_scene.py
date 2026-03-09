@@ -25,9 +25,8 @@ class AmbushScene(Scene):
         self.biome_name = biome_name
         self.on_complete = on_complete
 
-        info    = pygame.display.Info()
-        self.sw = info.current_w
-        self.sh = info.current_h
+        self.sw = assets.screen_w
+        self.sh = assets.screen_h
 
         self.timer     = 0
         self.fade_in   = 0.0

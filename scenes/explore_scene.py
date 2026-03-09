@@ -10,7 +10,6 @@ from core.scene_manager import Scene
 from data.creatures import BIOME_DATA, make_explore_enemy, restore_player
 import systems.save_system as save_system
 
-# How many fights before returning to map (or player can leave any time)
 EXPLORE_BIOMES = [
     {"key": "forest", "label": "Wildwood Trail",
      "desc": "Tangle with forest creatures.",   "bg": "explore_forest", "music": "forest"},
@@ -32,18 +31,16 @@ class ExploreScene(Scene):
         self.player_character = player_character
         self.save_data        = save_data or save_system.load()
 
-        info    = pygame.display.Info()
-        self.sw = info.current_w
-        self.sh = info.current_h
+        self.sw = assets.screen_w
+        self.sh = assets.screen_h
 
         self.selected  = 0
         self.timer     = 0
         self.fade_in   = 0.0
-
         self._music_started = False
 
     def escape_quits(self):
-        return False  # ESC returns to map, doesn't quit game
+        return False
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -59,6 +56,8 @@ class ExploreScene(Scene):
                 self._back_to_map()
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            self._touch_start_x = event.pos[0]
+            self._touch_moved   = False
             for i, rect in enumerate(self._card_rects()):
                 if rect.collidepoint(event.pos):
                     if self.selected == i:
@@ -70,9 +69,23 @@ class ExploreScene(Scene):
                 self._back_to_map()
 
         if event.type == pygame.MOUSEMOTION:
+            if getattr(self, "_touch_start_x", None) is not None:
+                dx = event.pos[0] - self._touch_start_x
+                if abs(dx) > 30:
+                    self._touch_moved = True
+                    if dx < 0:
+                        self.selected = (self.selected + 1) % len(EXPLORE_BIOMES)
+                    else:
+                        self.selected = (self.selected - 1) % len(EXPLORE_BIOMES)
+                    self.assets.play_sound("click")
+                    self._touch_start_x = event.pos[0]
             for i, rect in enumerate(self._card_rects()):
                 if rect.collidepoint(event.pos):
                     self.selected = i
+
+        if event.type == pygame.MOUSEBUTTONUP:
+            self._touch_start_x = None
+            self._touch_moved   = False
 
     def _back_to_map(self):
         from scenes.map_scene import MapScene
@@ -109,9 +122,9 @@ class ExploreScene(Scene):
             battle_controller=battle_controller,
             assets=self.assets,
             bg_key=biome["bg"],
-            biome_key=biome["key"],  # pass key so BattleScene plays correct biome music
+            biome_key=biome["key"],
             is_boss_fight=False,
-            is_random=True,           # is_random=True keeps biome progress untouched
+            is_random=True,
             player_character=self.player_character,
             save_data=self.save_data,
             origin="explore",
@@ -127,24 +140,24 @@ class ExploreScene(Scene):
     def _card_rects(self):
         n       = len(EXPLORE_BIOMES)
         card_w  = int(self.sw * 0.19)
-        card_h  = int(self.sh * 0.46)
+        card_h  = int(self.sh * 0.50)
         gap     = int(self.sw * 0.025)
         total_w = n * card_w + (n - 1) * gap
         start_x = (self.sw - total_w) // 2
-        card_y  = int(self.sh * 0.26)
+        card_y  = int(self.sh * 0.23)
         return [pygame.Rect(start_x + i * (card_w + gap), card_y, card_w, card_h)
                 for i in range(n)]
 
     def _back_rect(self):
-        w, h = int(self.sw * 0.14), int(self.sh * 0.06)
-        return pygame.Rect(int(self.sw * 0.04), int(self.sh * 0.88), w, h)
+        w, h = int(self.sw * 0.14), int(self.sh * 0.065)
+        return pygame.Rect(int(self.sw * 0.04), int(self.sh * 0.875), w, h)
 
     def draw(self, screen):
         sw, sh = self.sw, self.sh
         cx     = sw // 2
         alpha  = int(255 * self.fade_in)
+        lh     = int(sh / 54)
 
-        # Background from selected zone
         biome = EXPLORE_BIOMES[self.selected]
         bg    = self.assets.get_image(biome["bg"])
         if bg:
@@ -163,25 +176,32 @@ class ExploreScene(Scene):
         if font_large:
             t  = font_large.render("EXPLORE", True, (100, 220, 255))
             ts = font_large.render("EXPLORE", True, (0, 0, 0))
+            if t.get_width() > sw - 20:
+                sc = (sw - 20) / t.get_width()
+                t  = pygame.transform.scale(t,  (int(t.get_width()*sc), int(t.get_height()*sc)))
+                ts = pygame.transform.scale(ts, (t.get_width(), t.get_height()))
             t.set_alpha(alpha); ts.set_alpha(alpha // 2)
             tx = cx - t.get_width() // 2
-            screen.blit(ts, (tx + 2, int(sh * 0.06) + 2))
-            screen.blit(t,  (tx,     int(sh * 0.06)))
+            screen.blit(ts, (tx + 2, int(sh * 0.04) + 2))
+            screen.blit(t,  (tx,     int(sh * 0.04)))
 
         # Subtitle
         if font_small:
-            sub = font_small.render("Fight for gold — no bosses", True, (140, 200, 180))
-            sub.set_alpha(alpha)
-            screen.blit(sub, (cx - sub.get_width() // 2, int(sh * 0.14)))
+            sub = self.assets.render_fitted("small", "Fight for gold — no bosses",
+                                            (140, 200, 180), sw - 40)
+            if sub:
+                sub.set_alpha(alpha)
+                screen.blit(sub, (cx - sub.get_width() // 2, int(sh * 0.115)))
 
-        # Gold & potions HUD
+        # HUD top-right — spaced lh*1.6 apart
         if font_small:
             gold = self.save_data.get("gold", 0)
             pots = self.save_data.get("potions", 0)
-            gs   = font_small.render(f"Gold: {gold}g", True, (255, 200, 50))
-            ps   = font_small.render(f"Potions: {pots}", True, (100, 220, 100))
-            screen.blit(gs, (sw - gs.get_width() - 20, 20))
-            screen.blit(ps, (sw - ps.get_width() - 20, 38))
+            hud_y = int(sh * 0.04)
+            for txt, col in [(f"Gold: {gold}g", (255,200,50)), (f"Potions: {pots}", (100,220,100))]:
+                s = font_small.render(txt, True, col)
+                screen.blit(s, (sw - s.get_width() - 16, hud_y))
+                hud_y += int(lh * 1.6)
 
         # Zone cards
         rects = self._card_rects()
@@ -196,59 +216,70 @@ class ExploreScene(Scene):
             brd_col = (80, 200, 255) if selected else (50, 80, 110)
             pygame.draw.rect(screen, brd_col, rect, 3 if selected else 1, border_radius=10)
 
-            # Thumbnail
+            # Thumbnail: top 44% of card
             thumb = self.assets.get_image(zone["bg"])
             if thumb:
-                th = int(rect.h * 0.42); tw = rect.w - 10
+                th  = int(rect.h * 0.43); tw = rect.w - 10
                 ts2 = pygame.transform.scale(thumb, (tw, th))
                 if not selected: ts2.set_alpha(140)
                 screen.blit(ts2, (rect.x + 5, rect.y + 5))
 
-            if font_medium:
-                lbl = font_medium.render(zone["label"], True,
-                                         (100, 220, 255) if selected else (160, 180, 200))
-                lbl_y = rect.y + int(rect.h * 0.50)
-                screen.blit(lbl, (rect.x + rect.w // 2 - lbl.get_width() // 2, lbl_y))
+            # Text section: 47% down
+            # label → text_top | desc lines → lh*2.0 each | ENTER → bottom
+            text_top = rect.y + int(rect.h * 0.47)
+            inner_w  = rect.w - 12
 
+            if font_medium:
+                lbl = self.assets.render_fitted("medium", zone["label"],
+                    (100, 220, 255) if selected else (160, 180, 200), inner_w)
+                if lbl:
+                    screen.blit(lbl, (rect.x + rect.w//2 - lbl.get_width()//2, text_top))
+
+            desc_y = text_top + int(lh * 2.2)
             if font_small:
-                desc = font_small.render(zone["desc"], True, (180, 200, 210))
-                desc_lines = []
+                # Word-wrap description
                 words = zone["desc"].split()
-                cur = ""
+                lines_out, cur = [], ""
                 for w in words:
                     test = (cur + " " + w).strip()
-                    if font_small.size(test)[0] <= rect.w - 12:
+                    if font_small.size(test)[0] <= inner_w:
                         cur = test
                     else:
-                        desc_lines.append(cur); cur = w
-                if cur: desc_lines.append(cur)
-                for li, dl in enumerate(desc_lines):
+                        if cur: lines_out.append(cur)
+                        cur = w
+                if cur: lines_out.append(cur)
+                for dl in lines_out[:2]:
                     ds = font_small.render(dl, True, (160, 180, 190))
-                    screen.blit(ds, (rect.x + rect.w // 2 - ds.get_width() // 2,
-                                     rect.y + int(rect.h * 0.64) + li * 16))
+                    screen.blit(ds, (rect.x + rect.w//2 - ds.get_width()//2, desc_y))
+                    desc_y += int(lh * 1.8)
 
             if selected and font_small:
-                hint = font_small.render("ENTER to fight", True, (80, 220, 255))
-                pulse_a = int(200 * pulse)
-                hint.set_alpha(pulse_a)
-                screen.blit(hint, (rect.x + rect.w // 2 - hint.get_width() // 2,
-                                   rect.bottom - 22))
+                hint = self.assets.render_fitted("small", "ENTER to fight",
+                                                  (80, 220, 255), inner_w)
+                if hint:
+                    pulse_a = int(200 * pulse)
+                    hint.set_alpha(pulse_a)
+                    screen.blit(hint, (rect.x + rect.w//2 - hint.get_width()//2,
+                                       rect.bottom - int(lh * 1.6)))
 
         # Back button
         br = self._back_rect()
         pygame.draw.rect(screen, (30, 30, 50), br, border_radius=7)
         pygame.draw.rect(screen, (80, 80, 120), br, 1, border_radius=7)
         if font_small:
-            bl = font_small.render("[ESC] Back", True, (160, 160, 200))
-            screen.blit(bl, (br.x + br.w // 2 - bl.get_width() // 2,
-                              br.y + br.h // 2 - bl.get_height() // 2))
+            bl = self.assets.render_fitted("small", "[ESC] Back", (160, 160, 200), br.w - 10)
+            if bl:
+                screen.blit(bl, (br.x + br.w//2 - bl.get_width()//2,
+                                  br.y + br.h//2 - bl.get_height()//2))
 
         # Nav hint
         if font_small:
-            nav = font_small.render("← → browse zones   ENTER fight", True, (80, 90, 120))
-            screen.blit(nav, (cx - nav.get_width() // 2, int(sh * 0.95)))
+            nav = self.assets.render_fitted("small", "← → browse zones   ENTER fight",
+                                            (80, 90, 120), sw - 20)
+            if nav:
+                screen.blit(nav, (cx - nav.get_width()//2, int(sh * 0.958)))
 
-        # Fade in overlay
+        # Fade-in overlay
         if self.fade_in < 1.0:
             fo = pygame.Surface((sw, sh), pygame.SRCALPHA)
             fo.fill((0, 0, 0, int(255 * (1.0 - self.fade_in))))

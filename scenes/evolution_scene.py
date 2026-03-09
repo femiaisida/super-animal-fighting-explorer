@@ -18,9 +18,8 @@ class EvolutionScene(Scene):
         self.player_party = player_party
         self.on_complete  = on_complete   # callable(save_data, player_party)
 
-        info    = pygame.display.Info()
-        self.sw = info.current_w
-        self.sh = info.current_h
+        self.sw = assets.screen_w
+        self.sh = assets.screen_h
 
         self.assets.stop_music()
         self.assets.play_music("evolution")   # plays if evolution.mp3/ogg exists, silent if not

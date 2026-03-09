@@ -114,6 +114,19 @@ class AssetManager:
     def get_font(self, name):
         return self.fonts.get(name)
 
+    def render_fitted(self, font_name, text, colour, max_w):
+        """Render text scaled down to fit max_w pixels wide."""
+        font = self.get_font(font_name)
+        if not font:
+            return None
+        surf = font.render(text, True, colour)
+        if surf.get_width() > max_w and max_w > 0:
+            scale = max_w / surf.get_width()
+            new_w = int(surf.get_width() * scale)
+            new_h = int(surf.get_height() * scale)
+            surf = pygame.transform.scale(surf, (new_w, new_h))
+        return surf
+
     def register_music(self, name, stem):
         """Register a music track by stem name (no extension).
         Stores the stem; play_music resolves the actual file at play time."""
@@ -180,7 +193,7 @@ class AssetManager:
 
     def load_all(self):
         try:
-            pygame.mixer.init()
+            pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
         except Exception:
             pass
 
@@ -271,14 +284,14 @@ class AssetManager:
         self.load_image("icon_gold",   "icon_gold.png",   scale=(28, 28))
 
         # ── Sound effects ──────────────────────────────────────────────────────
-        self.load_sound("attack",    "attack.wav")
-        self.load_sound("hit",       "hit.wav")
-        self.load_sound("victory",   "victory.wav")
-        self.load_sound("boss_sting","boss.wav")
-        self.load_sound("click",     "button-click-.wav")
-        self.load_sound("potion",    "potion.wav")
-        self.load_sound("story",     "story_chime.wav")
-        self.load_sound("evolution", "evolution.wav")
+        self.load_sound("attack",    "attack.ogg")
+        self.load_sound("hit",       "hit.ogg")
+        self.load_sound("victory",   "victory.ogg")
+        self.load_sound("boss_sting","boss.ogg")
+        self.load_sound("click",     "button-click-.ogg")
+        self.load_sound("potion",    "potion.ogg")
+        self.load_sound("story",     "story_chime.ogg")
+        self.load_sound("evolution", "evolution.ogg")
 
         # ── Music (tries .ogg → .wav → .mp3 automatically) ───────────────────
         self.register_music("forest",  "forest")

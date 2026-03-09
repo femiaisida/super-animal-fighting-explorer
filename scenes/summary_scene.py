@@ -9,9 +9,8 @@ class SummaryScene(Scene):
         super().__init__(manager)
         self.assets    = assets
         self.save_data = save_data
-        info           = pygame.display.Info()
-        self.sw        = info.current_w
-        self.sh        = info.current_h
+        self.sw        = assets.screen_w
+        self.sh        = assets.screen_h
         self.timer     = 0
         self.font_large  = assets.get_font("large")
         self.font_medium = assets.get_font("medium")
