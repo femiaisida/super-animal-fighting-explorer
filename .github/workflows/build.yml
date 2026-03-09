@@ -76,6 +76,8 @@ jobs:
           sed -i 's/width=\"controls\"//g' build/web/index.html
           sed -i 's/body {/body { margin:0; padding:0; overflow:hidden; background:#000 !important;/g' build/web/index.html
           sed -i 's/canvas.emscripten {/canvas.emscripten { position:fixed; top:0; left:0; width:100vw !important; height:100vh !important;/g' build/web/index.html
+          # Inject audio context unlock script before </body>
+          sed -i 's|</body>|<script>\n(function(){\n  var unlocked=false;\n  function unlock(){\n    if(unlocked)return;\n    unlocked=true;\n    var AudioContext=window.AudioContext||window.webkitAudioContext;\n    if(!AudioContext)return;\n    var ctx=new AudioContext();\n    var buf=ctx.createBuffer(1,1,22050);\n    var src=ctx.createBufferSource();\n    src.buffer=buf;\n    src.connect(ctx.destination);\n    src.start(0);\n    if(ctx.state==="suspended")ctx.resume();\n    document.removeEventListener("touchstart",unlock);\n    document.removeEventListener("touchend",unlock);\n    document.removeEventListener("click",unlock);\n  }\n  document.addEventListener("touchstart",unlock,{passive:true});\n  document.addEventListener("touchend",unlock,{passive:true});\n  document.addEventListener("click",unlock,{passive:true});\n})();\n</script>\n</body>|g' build/web/index.html
           cd build/web && zip -r ../../SuperAnimalFightingExplorer_Web.zip .
       - uses: actions/upload-artifact@v4
         with:
