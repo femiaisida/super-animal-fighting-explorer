@@ -26,15 +26,18 @@ class LoadingScene(Scene):
         if not self.leaving:
             self.leaving = True
             self.assets.play_sound("click")
+            # Start music here — inside a user gesture handler so mobile
+            # browsers unlock the audio context before any other scene plays
+            if not self._music_started:
+                self._music_started = True
+                self.assets.play_music("menu")
 
     def _go(self):
         from scenes.character_select_scene import CharacterSelectScene
         self.manager.switch(CharacterSelectScene(self.manager, self.assets))
 
     def update(self, dt):
-        if not self._music_started:
-            self._music_started = True
-            self.assets.play_music("menu")
+        # Music now starts in _start_leave() on first user gesture instead
         self.timer   += 1
         self.fade_in  = min(1.0, self.fade_in + dt * 1.2)
         if self.fade_in >= 1.0:
