@@ -1,35 +1,21 @@
-import sys
-
 content = open('build/web/index.html').read()
 
 script = (
     '<script>\n'
-    '(function(){\n'
-    '  var unlocked=false;\n'
-    '  function unlock(){\n'
-    '    if(unlocked)return;\n'
-    '    unlocked=true;\n'
-    '    var AC=window.AudioContext||window.webkitAudioContext;\n'
-    '    if(!AC)return;\n'
-    '    var ctx=new AC();\n'
-    '    var buf=ctx.createBuffer(1,1,22050);\n'
-    '    var src=ctx.createBufferSource();\n'
-    '    src.buffer=buf;\n'
-    '    src.connect(ctx.destination);\n'
-    '    src.start(0);\n'
-    '    if(ctx.state==="suspended")ctx.resume();\n'
-    '    document.removeEventListener("touchstart",unlock);\n'
-    '    document.removeEventListener("touchend",unlock);\n'
-    '    document.removeEventListener("click",unlock);\n'
-    '  }\n'
-    '  document.addEventListener("touchstart",unlock,{passive:true});\n'
-    '  document.addEventListener("touchend",unlock,{passive:true});\n'
-    '  document.addEventListener("click",unlock,{passive:true});\n'
-    '})();\n'
+    'function unlockSDL2Audio() {\n'
+    '  try {\n'
+    '    if (typeof SDL2 !== "undefined" && SDL2.audioContext) {\n'
+    '      SDL2.audioContext.resume();\n'
+    '    }\n'
+    '  } catch(e) {}\n'
+    '}\n'
+    'document.addEventListener("touchstart", unlockSDL2Audio, {passive:true});\n'
+    'document.addEventListener("touchend",   unlockSDL2Audio, {passive:true});\n'
+    'document.addEventListener("click",      unlockSDL2Audio, {passive:true});\n'
     '</script>\n'
     '</body>'
 )
 
 content = content.replace('</body>', script)
 open('build/web/index.html', 'w').write(content)
-print('audio unlock injected')
+print('SDL2 audio unlock injected')
