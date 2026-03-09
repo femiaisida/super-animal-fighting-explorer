@@ -72,8 +72,23 @@ jobs:
           pip install pygame pygbag
           python -m pygbag --build --ume_block 0 .
           sed -i "s/autorun : 0/autorun : 1/g" build/web/index.html
-          sed -i "s/width=\"controls\"/width=\"960\" height=\"540\"/g" build/web/index.html
           cp assets/favicon_custom.png build/web/favicon.png
+          python3 - << 'PYEOF'
+content = open("build/web/index.html").read()
+# Remove fixed width/height attribute on canvas controls line
+content = content.replace('width="controls"', '')
+# Make body and canvas fill viewport
+content = content.replace(
+    "body {",
+    "body { margin:0; padding:0; overflow:hidden; background:#000 !important;"
+)
+content = content.replace(
+    "canvas.emscripten {",
+    "canvas.emscripten { position:fixed; top:0; left:0; width:100vw !important; height:100vh !important;"
+)
+open("build/web/index.html","w").write(content)
+print("index patched")
+PYEOF
           cd build/web && zip -r ../../SuperAnimalFightingExplorer_Web.zip .
       - uses: actions/upload-artifact@v4
         with:

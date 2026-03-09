@@ -103,10 +103,11 @@ class NPCScene(Scene):
                     return
             next_r  = self._next_rect()
             close_r = self._close_rect()
-            if next_r.collidepoint(event.pos):
-                self._advance()
-            elif close_r.collidepoint(event.pos):
+            if close_r.collidepoint(event.pos):
                 self.on_close()
+            else:
+                # Tap anywhere (including next button) = advance
+                self._advance()
 
     def _advance(self):
         # If typewriter not done, skip to full line first
