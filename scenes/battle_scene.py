@@ -482,7 +482,7 @@ class BattleScene(Scene):
             self._draw_combatant(screen, c, int(sw*0.10)+i*180, sprite_y, ox+bx, oy+by, flip=False)
         for i, e in enumerate(self.enemy_party):
             bx, by = self.idle.get_offset(e)
-            self._draw_combatant(screen, e, int(sw*0.68)-i*220, sprite_y, ox+bx, oy+by, flip=True)
+            self._draw_combatant(screen, e, int(sw*0.68)-i*220, sprite_y, ox+bx, oy+by, flip=False)
 
         self.vfx.draw(screen)
         self._draw_ability_bar(screen)
