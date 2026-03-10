@@ -180,6 +180,7 @@ class AssetManager:
 
     def load_all(self):
         try:
+            pygame.mixer.pre_init(24000, -16, 1, 512)
             pygame.mixer.init()
         except Exception:
             pass
