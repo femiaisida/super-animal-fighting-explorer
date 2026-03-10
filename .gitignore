@@ -5,3 +5,8 @@ save.json
 assets/old assets/
 build/
 dist/
+__pycache__/
+*.pyc
+*.bak
+main_original.py
+main_web_backup.py
